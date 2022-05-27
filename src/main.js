@@ -1,67 +1,69 @@
-const crypto = require("crypto");
-const fs = require("fs");
+var crypto = require("crypto");
+var fs = require("fs");
 
-function calculateBlocks(data) {
-  const blockSize = 1024;
-  const blocks = Math.ceil(data.length / blockSize);
-  const blocksArray = [];
-  let currentBlocksSize = 0;
-  let j = 0;
+function calculaHash(bloco) {
 
-  for (let i = 0; i < blocks; i++) {
-    let block = [];
-    for (j = 0; j < blockSize; j++) {
-      if (data[currentBlocksSize + j] !== undefined) {
-        block.push(data[currentBlocksSize + j]);
-      }
-    }
-    currentBlocksSize += j;
-    blocksArray.push(block);
-  }
-
-  return blocksArray;
-}
-
-function calculateHash(block) {
-  // The "data" argument must be of type string or an instance of Buffer or Uint8Array
-  const bufferedBlock = new Uint8Array(block);
-  const hash = crypto.createHash("sha256").update(bufferedBlock);
+  var blocoBufferizado = new Uint8Array(bloco);
+  var hash = crypto.createHash("sha256").update(blocoBufferizado);
 
   return hash;
 }
 
-function calculateH0(blocks) {
-  const reversedBlocks = blocks.reverse();
+function calculaH0(blocos) {
 
-  const hashBlocks = [];
-  // CONSOLE ERROR: The "list[0]" argument must be an instance of Buffer or Uint8Array. Received an instance of Hash
-  hashBlocks.push(calculateHash(reversedBlocks[0]));
+  var blocoInvertido = blocos.reverse();
 
-  for (let i = 1; i < reversedBlocks.length; i++) {
-    const bufferedBlock = new Uint8Array(reversedBlocks[i]);
-    const nextBlock = Int8Array.from([
-      ...bufferedBlock,
-      ...hashBlocks[i - 1].digest(),
+  var blocoHash = [];
+  blocoHash.push(calculaHash(blocoInvertido[0]));
+
+  for (var i = 1; i < blocoInvertido.length; i++) {
+    var blocoBufferizado = new Uint8Array(blocoInvertido[i]);
+    var proximoBloco = Int8Array.from([
+      ...blocoBufferizado,
+      ...blocoHash[i - 1].digest(),
     ]);
 
-    hashBlocks.push(calculateHash(nextBlock));
+    blocoHash.push(calculaHash(proximoBloco));
   }
 
-  const H0 = hashBlocks[hashBlocks.length - 1].digest("hex");
+  var H0 = blocoHash[blocoHash.length - 1].digest("hex");
+
   return H0;
+
 }
 
-function run() {
-  const args = process.argv.slice(2);
-  const fileName = args[0] || "FuncoesResumo-SHA1.mp4";
-  const data = fs.readFileSync(`./src/videos/${fileName}`);
-  const blocks = calculateBlocks(data);
+function calculaBlocos(leitor) {
 
-  console.log(
-    `The hex encoded h0 for the video FuncoesResumo - SHA1.mp4 is: ${calculateH0(
-      blocks
-    )}`
-  );
+  var tamBloco = 1024;
+  var blocos = Math.ceil(leitor.length / tamBloco);
+  var vetorBlocos = [];
+  var tamAtualBloco = 0;
+  var j = 0;
+
+  for (var i = 0; i < blocos; i++) {
+    var bloco = [];
+    for (j = 0; j < tamBloco; j++) {
+      if (leitor[tamAtualBloco + j] !== undefined) {
+        bloco.push(leitor[tamAtualBloco + j]);
+      }
+    }
+    tamAtualBloco += j;
+    vetorBlocos.push(bloco);
+  }
+
+  return vetorBlocos;
+
 }
 
-run();
+function main() {
+
+  var aux = process.argv.slice(2);
+  var nomeArquivo = aux[0];
+  var leitor = fs.readFileSync(`./src/videos/${nomeArquivo}`);
+  var blocos = calculaBlocos(leitor);
+
+  console.log(`The hex encoded h0 for the video is: ${calculaH0(blocos)}`);
+
+}
+
+main();
